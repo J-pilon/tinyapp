@@ -6,22 +6,6 @@ const PORT = 8080;
 
 app.set("view engine", "ejs")
 
-const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
-
-app.use(bodyParser.urlencoded({extended: true}));
-
-app.post("/urls", (request, response) => {
-  console.log('this is request.body', request.body);  
-  const randomNum = generateRandomString();
-  urlDatabase[randomNum] = request.body.longURL;
-
-  const templateVars = { urls: urlDatabase };
-  response.render("urls_index", templateVars);
-});
-
 function generateRandomString() {
   const chars = 'abcdefghijklmnopqrstuvwxyz123456789';
   let result = '';
@@ -31,6 +15,29 @@ function generateRandomString() {
   }
   return result;
 };
+
+const urlDatabase = {
+  "b2xVn2": "http://www.lighthouselabs.ca",
+  "9sm5xK": "http://www.google.com"
+};
+
+app.use(bodyParser.urlencoded({extended: true}));
+
+app.post("/urls", (request, response) => {
+  // console.log('this is request.body', request.body);  
+  const randomNum = generateRandomString();
+  urlDatabase[randomNum] = request.body.longURL;
+
+  const templateVars = { urls: urlDatabase };
+  response.render("urls_index", templateVars);
+});
+
+app.post("/urls/:shortURL/delete", (request, response) => {
+  const key = request.params.shortURL;
+  delete urlDatabase[key];
+  response.redirect("/urls");
+});
+
 
 app.get("/", (request, response) => {
   response.send("Hello");
@@ -54,7 +61,6 @@ app.get("/urls/new", (request, response) => {
 });
 
 app.get("/u/:shortURL", (request, response) => {
-
   const longURL = request.params.shortURL;
   const newURL = urlDatabase[longURL];
   response.redirect(newURL);
