@@ -14,10 +14,10 @@ const urlDatabase = {
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.post("/urls", (request, response) => {
-  console.log(request.body);  
+  console.log('this is request.body', request.body);  
   const randomNum = generateRandomString();
   urlDatabase[randomNum] = request.body.longURL;
-  
+
   const templateVars = { urls: urlDatabase };
   response.render("urls_index", templateVars);
 });
@@ -53,9 +53,20 @@ app.get("/urls/new", (request, response) => {
   response.render("urls_new")
 });
 
+app.get("/u/:shortURL", (request, response) => {
+
+  const longURL = request.params.shortURL;
+  const newURL = urlDatabase[longURL];
+  response.redirect(newURL);
+});
+
 app.get("/urls/:shortURL", (request, response) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase.b2xVn2 };
+  const templateVars = { shortURL: request.params.shortURL, longURL: urlDatabase.b2xVn2 };
   response.render("urls_show", templateVars);
+});
+
+app.get("*", (request, response) => {
+  response.render("urls_404");
 });
 
 app.listen(PORT, () => {
