@@ -13,10 +13,22 @@ const urlDatabase = {
 
 app.use(bodyParser.urlencoded({extended: true}));
 
-app.post("/urls", (req, res) => {
+app.post("/urls", (request, response) => {
   console.log(req.body);  
-  res.send("Ok");         
+  response.send("Ok");         
 });
+
+function generateRandomString() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    let num = Math.floor(Math.random() * 36);
+    result += chars[num];
+  }
+  return result;
+};
+
+const randomNum = generateRandomString();
 
 app.get("/", (request, response) => {
   response.send("Hello");
