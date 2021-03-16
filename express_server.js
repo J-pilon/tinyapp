@@ -14,8 +14,12 @@ const urlDatabase = {
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.post("/urls", (request, response) => {
-  console.log(req.body);  
-  response.send("Ok");         
+  console.log(request.body);  
+  const randomNum = generateRandomString();
+  urlDatabase[randomNum] = request.body.longURL;
+  
+  const templateVars = { urls: urlDatabase };
+  response.render("urls_index", templateVars);
 });
 
 function generateRandomString() {
@@ -27,8 +31,6 @@ function generateRandomString() {
   }
   return result;
 };
-
-const randomNum = generateRandomString();
 
 app.get("/", (request, response) => {
   response.send("Hello");
