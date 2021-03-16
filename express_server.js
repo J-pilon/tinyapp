@@ -13,6 +13,11 @@ const urlDatabase = {
 
 app.use(bodyParser.urlencoded({extended: true}));
 
+app.post("/urls", (req, res) => {
+  console.log(req.body);  
+  res.send("Ok");         
+});
+
 app.get("/", (request, response) => {
   response.send("Hello");
 });
