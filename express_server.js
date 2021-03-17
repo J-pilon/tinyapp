@@ -23,8 +23,7 @@ const urlDatabase = {
 
 app.use(bodyParser.urlencoded({extended: true}));
 
-app.post("/urls", (request, response) => {
-  // console.log('this is request.body', request.body);  
+app.post("/urls", (request, response) => { 
   const randomNum = generateRandomString();
   urlDatabase[randomNum] = request.body.longURL;
 
@@ -43,7 +42,12 @@ app.post("/urls/:shortURL", (request, response) => {
   const shortURL = request.params.shortURL;
   urlDatabase[shortURL] = request.body.longURL;
   response.redirect("/urls");
-})
+});
+
+app.post("/login", (request, response) => {
+  console.log("username");
+  response.redirect("/urls");
+});
 
 app.get("/", (request, response) => {
   response.send("Hello");
