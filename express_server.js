@@ -33,28 +33,34 @@ app.post("/urls", (request, response) => {
 });
 
 app.post("/urls/:shortURL/delete", (request, response) => {
-  const key = request.params.shortURL;
-  delete urlDatabase[key];
+  const shortURL = request.params.shortURL;
+  delete urlDatabase[shortURL];
   response.redirect("/urls");
 });
 
+// update longURL value in database
+app.post("/urls/:shortURL", (request, response) => {
+  const shortURL = request.params.shortURL;
+  urlDatabase[shortURL] = request.body.longURL;
+  response.redirect("/urls");
+})
 
 app.get("/", (request, response) => {
   response.send("Hello");
 });
 
-app.get("/urls.json", (request, response) => {
-  response.json(urlDatabase);
-});
+// app.get("/urls.json", (request, response) => {
+//   response.json(urlDatabase);
+// });
 
-app.get("/hello", (request, response) => {
-  response.send("<html><body>Hello <b>World</b></body></html>\n")
-});
+// app.get("/hello", (request, response) => {
+//   response.send("<html><body>Hello <b>World</b></body></html>\n")
+// });
 
 app.get("/urls", (request, response) => {
   const templateVars = { urls: urlDatabase };
   response.render("urls_index", templateVars);
-})
+});
 
 app.get("/urls/new", (request, response) => {
   response.render("urls_new")
@@ -67,7 +73,8 @@ app.get("/u/:shortURL", (request, response) => {
 });
 
 app.get("/urls/:shortURL", (request, response) => {
-  const templateVars = { shortURL: request.params.shortURL, longURL: urlDatabase.b2xVn2 };
+  const key = request.params.shortURL;
+  const templateVars = { shortURL: request.params.shortURL, longURL: urlDatabase[key] };
   response.render("urls_show", templateVars);
 });
 
