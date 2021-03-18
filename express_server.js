@@ -50,23 +50,22 @@ app.use(cookieParser());
 
 // user registers and user_id stored in cookie
 app.post("/register", (request, response) => {
-  if (emailLookUp(request.body.email)) {
-    response.send(400);
-  }
-  
-    const id = generateRandomString();
-    users[id] = {};
-    users[id].email = request.body.email;
-    const email = users[id].email;
-    users[id].password = request.body.password;
-    const password = users[id].password; 
+  const email = request.body.email;
+  const password = request.body.password;
 
-  if(email.length === 0 || password.length === 0) {
-    response.render("urls_400");
-  } else {
-    response.cookie("user_id", id);
-    response.redirect("/urls");
+  if (emailLookUp(email) || email.length === 0 || password.length === 0) {
+    response.sendStatus(400);
+    return;
   }
+
+  const id = generateRandomString();
+  users[id] = {};
+  users[id].email = email;
+  users[id].password = password;
+
+  response.cookie("user_id", id);
+  response.redirect("/urls");
+
 });
 
 // request to generate shortURL for longURL
@@ -107,14 +106,6 @@ app.post("/logout", (request, response) => {
 // 
 // server-side
 // 
-
-// app.get("/urls.json", (request, response) => {
-//   response.json(urlDatabase);
-// });
-
-// app.get("/hello", (request, response) => {
-//   response.send("<html><body>Hello <b>World</b></body></html>\n")
-// });
   
 // registration page
 app.get("/register", (request, response) => {
@@ -163,7 +154,7 @@ app.get("/urls/:shortURL", (request, response) => {
 
 // 404-page not found
 app.get("*", (request, response) => {
-  response.render("urls_404");
+  response.sendStatus(404);
 });
 
 // server is listening
