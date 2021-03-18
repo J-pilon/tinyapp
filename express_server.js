@@ -18,14 +18,26 @@ function generateRandomString() {
   return result;
 };
 
+const emailLookUp = function(emailInput) {
+  for (const key in users) {
+    if (users[key].email === emailInput) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+};
+
+
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-// const users = {
-  
-// };
+// database for the users id, email, password
+const users = {};
+
 // 
 //  middleware
 // 
@@ -35,9 +47,30 @@ app.use(cookieParser());
 // 
 // client-side
 // 
+
+// user registers and user_id stored in cookie
+app.post("/register", (request, response) => {
+  if (emailLookUp(request.body.email)) {
+    response.send(400);
+  }
+  
+    const id = generateRandomString();
+    users[id] = {};
+    users[id].email = request.body.email;
+    const email = users[id].email;
+    users[id].password = request.body.password;
+    const password = users[id].password; 
+
+  if(email.length === 0 || password.length === 0) {
+    response.render("urls_400");
+  } else {
+    response.cookie("user_id", id);
+    response.redirect("/urls");
+  }
+});
+
 // request to generate shortURL for longURL
 app.post("/urls", (request, response) => { 
-  const randomNum = generateRandomString();
   urlDatabase[randomNum] = request.body.longURL;
 
   const templateVars = { urls: urlDatabase };
@@ -67,7 +100,7 @@ app.post("/login", (request, response) => {
 
 // logout user
 app.post("/logout", (request, response) => {
-  response.clearCookie("username");
+  response.clearCookie("user_id");
   response.redirect("/urls");
 });
 
@@ -102,8 +135,10 @@ app.get("/logout", (request, response) => {
   response.render("urls_show");
 });
 // lists urls from database
+
 app.get("/urls", (request, response) => {
-  const templateVars = { username: request.cookies.username, urls: urlDatabase };
+  // console.log(request.cookies);
+  const templateVars = { user: users[request.cookies.user_id], urls: urlDatabase };
   response.render("urls_index", templateVars);
 });
 
@@ -122,7 +157,7 @@ app.get("/u/:shortURL", (request, response) => {
 // edit longURL
 app.get("/urls/:shortURL", (request, response) => {
   const shortURL = request.params.shortURL;
-  const templateVars = { username: request.body.username, shortURL: request.params.shortURL, longURL: urlDatabase[shortURL] };
+  const templateVars = { user: users[user_id], shortURL: request.params.shortURL, longURL: urlDatabase[shortURL] };
   response.render("urls_show", templateVars);
 });
 
