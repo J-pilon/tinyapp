@@ -2,13 +2,14 @@ const express = require("express");
 const bodyParser = require('body-parser');
 const cookieParser = require("cookie-parser");
 const { request } = require("express");
+const morgan = require('morgan')
 
 const app = express();
 const PORT = 8080;
 
 app.set("view engine", "ejs");
 
-function generateRandomString() {
+const randomString = function() {
   const chars = 'abcdefghijklmnopqrstuvwxyz123456789';
   let result = '';
   for (let i = 0; i < 6; i++) {
@@ -41,6 +42,8 @@ const users = {};
 // 
 //  middleware
 // 
+
+app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
@@ -58,7 +61,7 @@ app.post("/register", (request, response) => {
     return;
   }
 
-  const id = generateRandomString();
+  const id = randomString();
   users[id] = {};
   users[id].email = email;
   users[id].password = password;
@@ -68,9 +71,18 @@ app.post("/register", (request, response) => {
 
 });
 
+// 
+// user_id is the random string stored in a cookie
+// 
+
+app.post("/login", (request, response) => {
+
+});
+
 // request to generate shortURL for longURL
 app.post("/urls", (request, response) => { 
-  urlDatabase[randomNum] = request.body.longURL;
+  const string = randomString();
+  urlDatabase[string] = request.body.longURL;
 
   const templateVars = { urls: urlDatabase };
   response.render("urls_index", templateVars);
@@ -97,6 +109,10 @@ app.post("/login", (request, response) => {
   response.redirect("/urls");
 });
 
+// 
+// username is the username stored in a cookie
+// 
+
 // logout user
 app.post("/logout", (request, response) => {
   response.clearCookie("user_id");
@@ -110,6 +126,11 @@ app.post("/logout", (request, response) => {
 // registration page
 app.get("/register", (request, response) => {
   response.render("urls_register");
+});
+
+// user can login with email and password
+app.get("/login", (request, response) => {
+  response.render("urls_login");
 });
 
 // home page
@@ -131,6 +152,7 @@ app.get("/urls", (request, response) => {
   // console.log(request.cookies);
   const templateVars = { user: users[request.cookies.user_id], urls: urlDatabase };
   response.render("urls_index", templateVars);
+  console.log(user_id);
 });
 
 // create a new shortURL
@@ -148,7 +170,7 @@ app.get("/u/:shortURL", (request, response) => {
 // edit longURL
 app.get("/urls/:shortURL", (request, response) => {
   const shortURL = request.params.shortURL;
-  const templateVars = { user: users[user_id], shortURL: request.params.shortURL, longURL: urlDatabase[shortURL] };
+  const templateVars = { user: users[request.cookies.user_id], shortURL: request.params.shortURL, longURL: urlDatabase[shortURL] };
   response.render("urls_show", templateVars);
 });
 
