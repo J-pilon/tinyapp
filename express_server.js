@@ -70,13 +70,10 @@ app.post("/logout", (request, response) => {
   response.clearCookie("username");
   response.redirect("/urls");
 });
+
 // 
 // server-side
 // 
-// home page
-app.get("/", (request, response) => {
-  response.send("Hello");
-});
 
 // app.get("/urls.json", (request, response) => {
 //   response.json(urlDatabase);
@@ -85,6 +82,21 @@ app.get("/", (request, response) => {
 // app.get("/hello", (request, response) => {
 //   response.send("<html><body>Hello <b>World</b></body></html>\n")
 // });
+  
+// registration page
+app.get("/register", (request, response) => {
+  response.render("urls_register");
+});
+
+// home page
+app.get("/", (request, response) => {
+  response.send("Hello");
+});
+
+// renders index page when user logs in
+app.get("/login", (request, response) => {
+  response.render("urls_index");
+});
 
 app.get("/logout", (request, response) => {
   response.render("urls_show");
@@ -95,10 +107,6 @@ app.get("/urls", (request, response) => {
   response.render("urls_index", templateVars);
 });
 
-// renders index page when user logs in
-app.get("/login", (request, response) => {
-  response.render("urls_idex");
-});
 // create a new shortURL
 app.get("/urls/new", (request, response) => {
   response.render("urls_new")
