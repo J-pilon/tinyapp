@@ -1,8 +1,8 @@
 const express = require("express");
 const bodyParser = require('body-parser');
 const cookieParser = require("cookie-parser");
-const { request } = require("express");
-const morgan = require('morgan')
+// const { request } = require("express");
+const morgan = require('morgan');
 
 const app = express();
 const PORT = 8080;
@@ -39,17 +39,17 @@ const urlDatabase = {
 // database for the users id, email, password
 const users = {};
 
-// 
+//
 //  middleware
-// 
+//
 
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 
-// 
+//
 // client-side
-// 
+//
 
 // user registers and user_id stored in cookie
 app.post("/register", (request, response) => {
@@ -60,7 +60,6 @@ app.post("/register", (request, response) => {
     response.sendStatus(400);
     return;
   }
-
   const id = randomString();
   users[id] = {};
   users[id].email = email;
@@ -68,24 +67,28 @@ app.post("/register", (request, response) => {
 
   response.cookie("user_id", id);
   response.redirect("/urls");
-
 });
 
-// 
+//
 // user_id is the random string stored in a cookie
-// 
+//
 
 app.post("/login", (request, response) => {
-
+  if (emailLookUp(request.body.email)) {
+    response.redirect("/urls");
+    return;
+  }
+  const id = randomString();
+  response.cookie("user_id", id);
+  response.redirect("/register");
 });
 
 // request to generate shortURL for longURL
-app.post("/urls", (request, response) => { 
+app.post("/urls", (request, response) => {
   const string = randomString();
   urlDatabase[string] = request.body.longURL;
-
   const templateVars = { urls: urlDatabase };
-  response.render("urls_index", templateVars);
+  response.render("/urls", templateVars);
 });
 
 // request to delete entry
@@ -102,16 +105,15 @@ app.post("/urls/:shortURL", (request, response) => {
   response.redirect("/urls");
 });
 
-// saves username 
+// saves username
 app.post("/login", (request, response) => {
-  response.cookie("username", request.body.username);
-  // users["username"] = request.body.username;
+  response.cookie("user_id", request.body.user_id);
   response.redirect("/urls");
 });
 
-// 
+//
 // username is the username stored in a cookie
-// 
+//
 
 // logout user
 app.post("/logout", (request, response) => {
@@ -119,28 +121,26 @@ app.post("/logout", (request, response) => {
   response.redirect("/urls");
 });
 
-// 
+//
 // server-side
-// 
-  
+//
+
 // registration page
 app.get("/register", (request, response) => {
-  response.render("urls_register");
+  console.log('user_id: ', request.cookies.user_id);
+  const templateVars = {user: request.cookies.user_id};
+  response.render("urls_register", templateVars);
 });
 
 // user can login with email and password
 app.get("/login", (request, response) => {
-  response.render("urls_login");
+  const templateVars = { user: request.cookies.user_id };
+  response.render("urls_login", templateVars);
 });
 
 // home page
 app.get("/", (request, response) => {
   response.send("Hello");
-});
-
-// renders index page when user logs in
-app.get("/login", (request, response) => {
-  response.render("urls_index");
 });
 
 app.get("/logout", (request, response) => {
@@ -149,15 +149,13 @@ app.get("/logout", (request, response) => {
 // lists urls from database
 
 app.get("/urls", (request, response) => {
-  // console.log(request.cookies);
-  const templateVars = { user: users[request.cookies.user_id], urls: urlDatabase };
+  const templateVars = { user: request.cookies.user_id, urls: urlDatabase };
   response.render("urls_index", templateVars);
-  console.log(user_id);
 });
 
 // create a new shortURL
 app.get("/urls/new", (request, response) => {
-  response.render("urls_new")
+  response.render("urls_new");
 });
 
 // use shortURL as parameter to be redirected to longURL's page
@@ -181,5 +179,5 @@ app.get("*", (request, response) => {
 
 // server is listening
 app.listen(PORT, () => {
-  console.log(`Server is listening on port: ${PORT}`)
+  console.log(`Server is listening on port: ${PORT}`);
 });

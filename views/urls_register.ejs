@@ -7,16 +7,18 @@
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
   <title>Registration</title>
+  <%- include('partials/_header', user) %>
 </head>
 <body>
+  <h1>Create Account</h1>
   <table>
-    <tr>
-      <form method="POST" action="/register">
-        <td>email<input type="email" name="email"></td>
-        <td>password<input type="password" name="password"></td>
-        <td><button class="btn btn-primary" type="submit">submit registration</button></td>
-      </form>
-    </tr>
+    <form method="POST" action="/register">
+      <tr><td><label>email address</label></td></tr>
+      <tr><td><input type="email" name="email"></td></tr>
+      <tr><td><label>password</label></td></tr>
+      <tr><td><input type="password" name="password"></td></tr>
+      <tr><td><button class="btn btn-primary" type="submit">submit registration</button></td></tr>
+    </form>
   </table>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
