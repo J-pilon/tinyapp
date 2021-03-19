@@ -18,7 +18,7 @@ const generateRandomString = function() {
 const emailLookUp = function(emailInput, users) {
   for (const user in users) {
     if (users[user].email === emailInput) {
-      return true;
+      return users[user];
     }
   }
   return false;
@@ -68,8 +68,48 @@ app.post("/register", (request, response) => {
 
 // registration page
 app.get("/register", (request, response) => {
-  const templateVars = { user: users[request.cookies["user_id"]] };
+  const templateVars = { user: users[request.cookies.user_id] };
   response.render("urls_register", templateVars);
+});
+
+// logining in a user
+app.post("/login", (request, response) => {
+  const credentials = request.body;
+  
+  if (!credentials.email || !credentials.password) {
+    return response.statusCode(403)
+  } else if (emailLookUp(credentials.email, users) ) {
+    const userObj = emailLookUp(credentials.email, users);
+    console.log('userObj: ', userObj);
+
+    if (credentials.password === userObj.password) {
+      return response.cookie("user_id", userObj.id).redirect("/urls");
+    } else {
+      return response.statusCode(403)
+    }
+  }
+
+  return response.statusCode(403);
+});
+
+// user login page
+app.get("/login", (request, response) => {
+  const templateVars = { user: users[request.cookies["user_id"]] };
+  response.render("urls_login", templateVars);
+});
+
+//
+// username is the username stored in a cookie
+//
+
+// logout user
+app.post("/logout", (request, response) => {
+  response.clearCookie("user_id");
+  response.redirect("/login");
+});
+
+app.get("/logout", (request, response) => {
+  response.render("urls_show");
 });
 
 // request to generate shortURL for longURL
@@ -83,7 +123,6 @@ app.post("/urls", (request, response) => {
 // lists urls from database
 app.get("/urls", (request, response) => {
   const user = users[request.cookies.user_id];
-  // console.log('----> ', request.cookies);
   const templateVars = { user: user, urls: urlDatabase };
   response.render("urls_index", templateVars);
 });
@@ -109,50 +148,6 @@ app.get("/urls/:shortURL", (request, response) => {
   response.render("urls_show", templateVars);
 });
 
-// logining in a user
-app.post("/login", (request, response) => {
-  const credentials = request.body;
-  const user_id = request.cookies.user_id;
-  // check if user entered in credentials
-  if (!credentials.email || !credentials.password) {
-    response.status(400).send("must enter details!");
-  } 
-  // check if email is in database
-  else if (!emailLookUp(credentials.email, users)) {
-    response.status(403).send("user not registered");
-  }
-  // does password match user
-  else {
-    const user = emailLookUp(credentials.email, users);
-    if (user.password === credentials.password) {
-      response.cookie("user_id", user.user_id);
-      response.redirect("/urls");
-    } else {
-      response.status(403).send("what are you doin!");
-    }
-  }
-  // create cookie
-});
-
-// user login page
-app.get("/login", (request, response) => {
-  const templateVars = { user: users[request.cookies["user_id"]] };
-  response.render("urls_login", templateVars);
-});
-
-//
-// username is the username stored in a cookie
-//
-
-// logout user
-app.post("/logout", (request, response) => {
-  response.clearCookie("user_id");
-  response.redirect("/urls");
-});
-
-app.get("/logout", (request, response) => {
-  response.render("urls_show");
-});
 
 // home page
 app.get("/", (request, response) => {
