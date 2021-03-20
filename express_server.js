@@ -1,3 +1,7 @@
+// left off
+// urlDatabase[user.id] is undefined. why?
+
+
 const express = require("express");
 const bodyParser = require('body-parser');
 const cookieParser = require("cookie-parser");
@@ -27,11 +31,22 @@ const emailLookUp = function(emailInput, users) {
 
 
 const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+  // b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  // i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 // database for the users id, email, password
-const users = {};
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
 
 // helper functions:
 
@@ -59,7 +74,6 @@ app.post("/register", (request, response) => {
   response.cookie("user_id", user_id);
   response.redirect("/urls");
 });
-// Working^
 
 //
 // user_id is the random string stored in a cookie
@@ -76,15 +90,15 @@ app.post("/login", (request, response) => {
   const credentials = request.body;
   
   if (!credentials.email || !credentials.password) {
-    return response.statusCode(403)
+    return response.statusCode(403);
   } else if (emailLookUp(credentials.email, users) ) {
     const userObj = emailLookUp(credentials.email, users);
     console.log('userObj: ', userObj);
 
     if (credentials.password === userObj.password) {
-      return response.cookie("user_id", userObj.id).redirect("/urls");
+      return response.cookie("userInfo", userObj.id).redirect("/urls");
     } else {
-      return response.statusCode(403)
+      return response.statusCode(403);
     }
   }
 
@@ -93,7 +107,7 @@ app.post("/login", (request, response) => {
 
 // user login page
 app.get("/login", (request, response) => {
-  const templateVars = { user: users[request.cookies["user_id"]] };
+  const templateVars = { user: users[request.cookies.user_id] };
   response.render("urls_login", templateVars);
 });
 
@@ -113,18 +127,31 @@ app.get("/logout", (request, response) => {
 
 // request to generate shortURL for longURL
 app.post("/urls", (request, response) => {
-  // cannot make tiny url if user hasnt registered
-  // console.log('id: ', request.cookies.user_id);
-  const string = generateRandomString();
-  urlDatabase[string] = request.body.longURL;
-  const templateVars = { urls: urlDatabase };
-  response.render("/urls", templateVars);
+  const user = request.cookies.user_id;
+  const longURL = request.body.longURL;
+  const shortURL = generateRandomString();
+ 
+  urlDatabase[shortURL] = {};
+  
+  urlDatabase[shortURL].longURL = longURL;
+  urlDatabase[shortURL].userId = user;
+  console.log('urlDatabase: ', urlDatabase);
+
+  // console.log('urlData: ', request.body.shortURL);
+  // const templateVars = { urls: urlDatabase };
+  // response.render("/urls_index", templateVars);
+
+  response.redirect("/urls");
 });
 
 // lists urls from database
 app.get("/urls", (request, response) => {
   const user = users[request.cookies.user_id];
-  const templateVars = { user: user, urls: urlDatabase };
+  const user_id = request.cookies.user_id
+  // console.log("urlData: ", urlDatabase);
+  // if urlDatabase[shortURL].userId === user_id
+  // return shortURL and urlDatabase[shortURL].longURL
+  const templateVars = { user: user, urls: urlDatabase, user_id: user_id};
   response.render("urls_index", templateVars);
 });
 
@@ -147,14 +174,14 @@ app.post("/urls/:shortURL/delete", (request, response) => {
 
 // update longURL value in database
 app.post("/urls/:shortURL", (request, response) => {
+  const user = users[request.cookies.user_id];
   const shortURL = request.params.shortURL;
-  urlDatabase[shortURL] = request.body.longURL;
+  urlDatabase[user.id] = request.body.longURL;
   response.redirect("/urls");
 });
 
 // edit longURL
 app.get("/urls/:shortURL", (request, response) => {
-  console.log('wtf');
   const shortURL = request.params.shortURL;
   const templateVars = { user: users[request.cookies.user_id], shortURL: request.params.shortURL, longURL: urlDatabase[shortURL] };
   response.render("urls_show", templateVars);

@@ -22,13 +22,15 @@
       </thead>
       <tbody>
         <% for(let url in urls) { %>
+          <% if (urls[url].userId === user_id) { %>
           <tr>
-            <td><%= url %></td>
-            <td><%= urls[url] %></td>
+            <td><%= url %>a</td>
+            <td><%= urls[url].longURL%>b</td>
             <td><form method="GET" action="/urls/<%= url %>"><button class="btn btn-outline-success" type="submit" >edit</button></form></td>
             <td><form method="POST" action="/urls/<%= url %>/delete"><button class="btn btn-outline-danger" type="submit" >delete</button></form></td>
           </tr>
-        <% } %>
+          <% } %>
+          <% } %>
       </tbody>
     </table>
   </main>
