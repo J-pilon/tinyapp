@@ -27,10 +27,9 @@ const emailLookUp = function(emailInput, users) {
 
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
-
 // database for the users id, email, password
 const users = {};
 
@@ -114,6 +113,8 @@ app.get("/logout", (request, response) => {
 
 // request to generate shortURL for longURL
 app.post("/urls", (request, response) => {
+  // cannot make tiny url if user hasnt registered
+  // console.log('id: ', request.cookies.user_id);
   const string = generateRandomString();
   urlDatabase[string] = request.body.longURL;
   const templateVars = { urls: urlDatabase };
@@ -125,6 +126,16 @@ app.get("/urls", (request, response) => {
   const user = users[request.cookies.user_id];
   const templateVars = { user: user, urls: urlDatabase };
   response.render("urls_index", templateVars);
+});
+
+app.get("/urls/new", (request, response) => {
+  const user = users[request.cookies.user_id];
+  if (!user) {
+    response.redirect("/register");
+  } else {
+    const templateVars = { user: users[request.cookies.user_id]};
+    response.render("urls_new", templateVars);
+  }
 });
 
 // request to delete entry
@@ -143,6 +154,7 @@ app.post("/urls/:shortURL", (request, response) => {
 
 // edit longURL
 app.get("/urls/:shortURL", (request, response) => {
+  console.log('wtf');
   const shortURL = request.params.shortURL;
   const templateVars = { user: users[request.cookies.user_id], shortURL: request.params.shortURL, longURL: urlDatabase[shortURL] };
   response.render("urls_show", templateVars);
@@ -155,9 +167,6 @@ app.get("/", (request, response) => {
 });
 
 // create a new shortURL
-app.get("/urls/new", (request, response) => {
-  response.render("urls_new");
-});
 
 // use shortURL as parameter to be redirected to longURL's page
 app.get("/u/:shortURL", (request, response) => {
