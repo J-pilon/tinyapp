@@ -1,6 +1,3 @@
-// left off
-// urlDatabase[user.id] is undefined. why?
-
 
 const express = require("express");
 const bodyParser = require('body-parser');
