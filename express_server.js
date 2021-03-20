@@ -28,6 +28,18 @@ const emailLookUp = function(emailInput, users) {
   return false;
 };
 
+const urlsForUser = function(id) {
+  usersUrlDatabase = {};
+
+  for (let url in urlDatabase) {
+    if(urlDatabase[url].userId === id) {
+      let temp = {     shortURL: url,     longURL: urlDatabase[url].longURL   };   
+      usersUrlDatabase[url] = temp;
+    }
+  }
+  console.log("usersUrlDatabase: ", usersUrlDatabase)
+  return usersUrlDatabase;
+};
 
 
 const urlDatabase = {
@@ -36,16 +48,16 @@ const urlDatabase = {
 };
 // database for the users id, email, password
 const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
-  },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "dishwasher-funk"
-  }
+//   "userRandomID": {
+//     id: "userRandomID", 
+//     email: "user@example.com", 
+//     password: "purple-monkey-dinosaur"
+//   },
+//  "user2RandomID": {
+//     id: "user2RandomID", 
+//     email: "user2@example.com", 
+//     password: "dishwasher-funk"
+//   }
 }
 
 // helper functions:
@@ -93,10 +105,11 @@ app.post("/login", (request, response) => {
     return response.statusCode(403);
   } else if (emailLookUp(credentials.email, users) ) {
     const userObj = emailLookUp(credentials.email, users);
-    console.log('userObj: ', userObj);
+    // const user_id = request.cookies.user_id;
 
+// made a change march 20
     if (credentials.password === userObj.password) {
-      return response.cookie("userInfo", userObj.id).redirect("/urls");
+      return response.cookie("user_id", userObj.id).redirect("/urls");
     } else {
       return response.statusCode(403);
     }
@@ -135,7 +148,7 @@ app.post("/urls", (request, response) => {
   
   urlDatabase[shortURL].longURL = longURL;
   urlDatabase[shortURL].userId = user;
-  console.log('urlDatabase: ', urlDatabase);
+  // console.log('urlDatabase: ', urlDatabase);
 
   // console.log('urlData: ', request.body.shortURL);
   // const templateVars = { urls: urlDatabase };
@@ -147,11 +160,23 @@ app.post("/urls", (request, response) => {
 // lists urls from database
 app.get("/urls", (request, response) => {
   const user = users[request.cookies.user_id];
+  console.log("user: ", user);
   const user_id = request.cookies.user_id
+  console.log("user_id: ", user_id);
+
   // console.log("urlData: ", urlDatabase);
   // if urlDatabase[shortURL].userId === user_id
   // return shortURL and urlDatabase[shortURL].longURL
-  const templateVars = { user: user, urls: urlDatabase, user_id: user_id};
+
+   
+  console.log("users: ", users);
+  console.log("urlDatabase : ", urlDatabase);
+
+
+
+  usersUrlDatabase = urlsForUser(user_id);
+  // console.log("!!! ", usersUrlDatabase);
+  const templateVars = { user: user, urls: usersUrlDatabase, user_id: user_id};
   response.render("urls_index", templateVars);
 });
 
@@ -184,6 +209,7 @@ app.post("/urls/:shortURL", (request, response) => {
 app.get("/urls/:shortURL", (request, response) => {
   const shortURL = request.params.shortURL;
   const templateVars = { user: users[request.cookies.user_id], shortURL: request.params.shortURL, longURL: urlDatabase[shortURL] };
+  // check if userId matches cookie. use urlsForUser function.
   response.render("urls_show", templateVars);
 });
 
@@ -197,8 +223,8 @@ app.get("/", (request, response) => {
 
 // use shortURL as parameter to be redirected to longURL's page
 app.get("/u/:shortURL", (request, response) => {
-  const longURL = request.params.shortURL;
-  const newURL = urlDatabase[longURL];
+  const shortURL = request.params.shortURL;
+  const newURL = urlDatabase[shortURL].longURL;
   response.redirect(newURL);
 });
 
@@ -213,3 +239,4 @@ app.get("*", (request, response) => {
 app.listen(PORT, () => {
   console.log(`Server is listening on port: ${PORT}`);
 });
+
