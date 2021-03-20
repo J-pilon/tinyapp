@@ -30,11 +30,13 @@ const urlsForUser = function(id) {
 
   for (let url in urlDatabase) {
     if(urlDatabase[url].userId === id) {
-      let temp = {     shortURL: url,     longURL: urlDatabase[url].longURL   };   
+      let temp = { shortURL: url, longURL: urlDatabase[url].longURL };   
       usersUrlDatabase[url] = temp;
+
+      // temp = {shortURL: {longURL: askj, shortURL: klsaj}}
     }
   }
-  console.log("usersUrlDatabase: ", usersUrlDatabase)
+  // console.log("usersUrlDatabase: ", usersUrlDatabase)
   return usersUrlDatabase;
 };
 
@@ -189,9 +191,17 @@ app.get("/urls/new", (request, response) => {
 
 // request to delete entry
 app.post("/urls/:shortURL/delete", (request, response) => {
+  const user_id = request.cookies.user_id;
   const shortURL = request.params.shortURL;
-  delete urlDatabase[shortURL];
-  response.redirect("/urls");
+
+  if (urlDatabase[shortURL].userId === user_id) {
+    delete urlDatabase[shortURL];
+    delete shortURL;
+    response.redirect("/urls");
+  } else {
+    response.send("Cant delete that");
+  }
+  
 });
 
 // update longURL value in database
