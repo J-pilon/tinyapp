@@ -4,56 +4,23 @@ const bcrypt = require('bcryptjs');
 const morgan = require('morgan');
 const cookieSession = require('cookie-session');
 
-const { emailLookUp } = require('./helpers');
+const { emailLookUp, generateRandomString, urlsForUser } = require('./helpers');
 
 const app = express();
 const PORT = 8080;
 
 app.set("view engine", "ejs");
 
-const generateRandomString = function() {
-  let num = Math.random().toString(36).substring(2,8);
-  return num;
-};
-
-
-
-const urlsForUser = function(id, database) {
-  usersUrlDatabase = {};
-
-  for (let url in database) {
-    if(database[url].userId === id) {
-      let temp = { shortURL: url, longURL: database[url].longURL };   
-      usersUrlDatabase[url] = temp;
-    }
-  }
-  return usersUrlDatabase;
-};
-
-const urlDatabase = {
-  // b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  // i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
-};
+const urlDatabase = {};
 
 // database for the users id, email, password
-const users = { 
-//   "aJ48lW": {
-//     id: "aJ48lW", 
-//     email: "user@example.com", 
-//     password: "purple-monkey-dinosaur"
-//   },
-//  "user2RandomID": {
-//     id: "user2RandomID", 
-//     email: "user2@example.com", 
-//     password: "dishwasher-funk"
-//   }
-}
+const users = {};
 
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'session',
-  keys: ["key1", "key2"],
+  keys: ["key1"],
 }));
 
 // user registers and userId stored in cookie
@@ -86,15 +53,11 @@ app.get("/register", (request, response) => {
 app.post("/login", (request, response) => {
   const email = request.body.email;
   const password = request.body.password;
+  const user = emailLookUp(email, users);
+  const hash = user.password;
+  request.session.userCookie = user.id;
 
-  const userId = emailLookUp(email, users);
-  console.log("userid in login: ", userId.id)
-
-  request.session.userCookie = userId.id;
-  const hash = userId.password;
-  console.log("hash: ", hash);
-
-  if (!emailLookUp(email, users)) {
+  if (!user) {
     response.send("No user with that email found");
     return;
   } else {
@@ -141,20 +104,21 @@ app.post("/urls", (request, response) => {
 
 // lists urls from database
 app.get("/urls", (request, response) => {
-  const user = users[request.session.userCookie];
-  const userId = request.session.userCookie
+  const userCookie = request.session.userCookie
+  const user = users[userCookie];
 
-  usersUrlDatabase = urlsForUser(userId, urlDatabase);
-  const templateVars = { user: user, urls: usersUrlDatabase, userId: userId};
+  usersUrlDatabase = urlsForUser(userCookie, urlDatabase);
+  console.log("usersUrlDatabase: ", usersUrlDatabase);
+  const templateVars = { user: user, urls: usersUrlDatabase, userId: userCookie};
   response.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (request, response) => {
-  const userCookie = users[request.session.userCookie];
-  if (!userCookie) {
+  const user = users[request.session.userCookie];
+  if (!user) {
     response.redirect("/register");
   } else {
-    const templateVars = { user: users[userCookie]};
+    const templateVars = { user };
     response.render("urls_new", templateVars);
   }
 });
@@ -176,6 +140,7 @@ app.post("/urls/:shortURL/delete", (request, response) => {
 
 // update longURL value in database
 app.post("/urls/:shortURL", (request, response) => {
+  console.log("!!!!");
   const shortURL = request.params.shortURL;
   urlDatabase[shortURL].longURL = request.body.longURL;
   response.redirect("/urls");
@@ -183,11 +148,10 @@ app.post("/urls/:shortURL", (request, response) => {
 
 // edit longURL
 app.get("/urls/:shortURL", (request, response) => {
-  const shortURL = request.params.shortURL;
-  const longURL = request.params.longURL;
+  const { shortURL, longURL } = request.params;
   const userCookie = request.session.userCookie;
 
-  const templateVars = { user: users[userCookie], shortURL: shortURL, longURL: longURL };
+  const templateVars = { user: users[userCookie], shortURL, longURL };
   response.render("urls_show", templateVars);
 });
 

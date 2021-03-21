@@ -21,12 +21,13 @@
   </div>
   <div>
     <table>
+      <form method="POST" action="/urls/<%= shortURL %>">
       <tr>
-        <td>New URL</td>
-        <td><form method="POST" action="/urls/<%= shortURL %>"></form></td>  
+        <td>New URL</td> 
         <td><input class="form-control" type="text" name="longURL" placeholder="http://" style="width: 300px; margin: 1em"></td>
         <td><button type="submit" class="btn btn-primary">Submit</button></td>
       </tr>
+    </form>
     </table>
   </div>
   <!-- Bootstrap JS -->
