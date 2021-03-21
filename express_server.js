@@ -4,6 +4,8 @@ const bcrypt = require('bcryptjs');
 const morgan = require('morgan');
 const cookieSession = require('cookie-session');
 
+const { emailLookUp } = require('./helpers');
+
 const app = express();
 const PORT = 8080;
 
@@ -14,27 +16,17 @@ const generateRandomString = function() {
   return num;
 };
 
-const emailLookUp = function(emailInput) {
-  const userData = users
-  for (const user in userData) {
-    if (userData[user].email === emailInput) {
-      console.log("emailLookUp");
-      return true;
-    }
-  }
-  return false;
-};
 
-const urlsForUser = function(id) {
+
+const urlsForUser = function(id, database) {
   usersUrlDatabase = {};
 
-  for (let url in urlDatabase) {
-    if(urlDatabase[url].userId === id) {
-      let temp = { shortURL: url, longURL: urlDatabase[url].longURL };   
+  for (let url in database) {
+    if(database[url].userId === id) {
+      let temp = { shortURL: url, longURL: database[url].longURL };   
       usersUrlDatabase[url] = temp;
     }
   }
-  console.log("usersUrlDatabase")
   return usersUrlDatabase;
 };
 
@@ -69,15 +61,15 @@ app.post("/register", (request, response) => {
   const email = request.body.email;
   const password = request.body.password;
   
-  if (emailLookUp(email) || email.length === 0 || password.length === 0) {
+  if (emailLookUp(email, users) || email.length === 0 || password.length === 0) {
     response.send('Error with registration! If already registered, please login');
   } else {
     const userId = generateRandomString();
-    request.session.userCookie = userId;
+    console.log("userid in register: ", userId)
+    // request.session.userCookie = userId;
     bcrypt.genSalt(10, function(err, salt) {
       bcrypt.hash(password, salt, function(err, hash) {      
         users[userId] = { id: userId, email: email, password: hash };
-        console.log("users: ", users);
       });
       response.redirect("/login");
     });
@@ -94,11 +86,15 @@ app.get("/register", (request, response) => {
 app.post("/login", (request, response) => {
   const email = request.body.email;
   const password = request.body.password;
-  const userId = request.session.userCookie;
-  const hash = users[userId].password;
+
+  const userId = emailLookUp(email, users);
+  console.log("userid in login: ", userId.id)
+
+  request.session.userCookie = userId.id;
+  const hash = userId.password;
   console.log("hash: ", hash);
 
-  if (!emailLookUp(email)) {
+  if (!emailLookUp(email, users)) {
     response.send("No user with that email found");
     return;
   } else {
@@ -115,7 +111,8 @@ app.post("/login", (request, response) => {
 
 // user login page
 app.get("/login", (request, response) => {
-  const userId = request.session.userCookie;
+  const email = request.body.email;
+  const userId = emailLookUp(email, users);
   const templateVars = { user: users[userId] };
   response.render("urls_login", templateVars);
 });
@@ -146,8 +143,8 @@ app.post("/urls", (request, response) => {
 app.get("/urls", (request, response) => {
   const user = users[request.session.userCookie];
   const userId = request.session.userCookie
-  // confused here
-  usersUrlDatabase = urlsForUser(userId);
+
+  usersUrlDatabase = urlsForUser(userId, urlDatabase);
   const templateVars = { user: user, urls: usersUrlDatabase, userId: userId};
   response.render("urls_index", templateVars);
 });
