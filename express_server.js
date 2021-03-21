@@ -1,9 +1,8 @@
-
 const express = require("express");
 const bodyParser = require('body-parser');
-const cookieParser = require("cookie-parser");
-// const { request } = require("express");
+const bcrypt = require('bcryptjs');
 const morgan = require('morgan');
+const cookieSession = require('cookie-session');
 
 const app = express();
 const PORT = 8080;
@@ -11,15 +10,16 @@ const PORT = 8080;
 app.set("view engine", "ejs");
 
 const generateRandomString = function() {
- 
   let num = Math.random().toString(36).substring(2,8);
   return num;
 };
 
-const emailLookUp = function(emailInput, users) {
-  for (const user in users) {
-    if (users[user].email === emailInput) {
-      return users[user];
+const emailLookUp = function(emailInput) {
+  const userData = users
+  for (const user in userData) {
+    if (userData[user].email === emailInput) {
+      console.log("emailLookUp");
+      return true;
     }
   }
   return false;
@@ -32,23 +32,21 @@ const urlsForUser = function(id) {
     if(urlDatabase[url].userId === id) {
       let temp = { shortURL: url, longURL: urlDatabase[url].longURL };   
       usersUrlDatabase[url] = temp;
-
-      // temp = {shortURL: {longURL: askj, shortURL: klsaj}}
     }
   }
-  // console.log("usersUrlDatabase: ", usersUrlDatabase)
+  console.log("usersUrlDatabase")
   return usersUrlDatabase;
 };
-
 
 const urlDatabase = {
   // b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
   // i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
+
 // database for the users id, email, password
 const users = { 
-//   "userRandomID": {
-//     id: "userRandomID", 
+//   "aJ48lW": {
+//     id: "aJ48lW", 
 //     email: "user@example.com", 
 //     password: "purple-monkey-dinosaur"
 //   },
@@ -59,77 +57,72 @@ const users = {
 //   }
 }
 
-// helper functions:
-
-
-//
-//  middleware
-//
-
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ["key1", "key2"],
+}));
 
-// user registers and user_id stored in cookie
+// user registers and userId stored in cookie
 app.post("/register", (request, response) => {
   const email = request.body.email;
   const password = request.body.password;
-
-  if (emailLookUp(email, users) || email.length === 0 || password.length === 0) {
+  
+  if (emailLookUp(email) || email.length === 0 || password.length === 0) {
     response.send('Error with registration! If already registered, please login');
-    return;
+  } else {
+    const userId = generateRandomString();
+    request.session.userCookie = userId;
+    bcrypt.genSalt(10, function(err, salt) {
+      bcrypt.hash(password, salt, function(err, hash) {      
+        users[userId] = { id: userId, email: email, password: hash };
+        console.log("users: ", users);
+      });
+      response.redirect("/login");
+    });
   }
-  const user_id = generateRandomString();
-  users[user_id] = { id: user_id, email: email, password: password };
-
-  response.cookie("user_id", user_id);
-  response.redirect("/urls");
-});
-
-//
-// user_id is the random string stored in a cookie
-//
-
+})
+  
 // registration page
 app.get("/register", (request, response) => {
-  const templateVars = { user: users[request.cookies.user_id] };
+  const templateVars = { user: users[request.session.userCookie] };
   response.render("urls_register", templateVars);
 });
 
 // logining in a user
 app.post("/login", (request, response) => {
-  const credentials = request.body;
-  
-  if (!credentials.email || !credentials.password) {
-    return response.statusCode(403);
-  } else if (emailLookUp(credentials.email, users) ) {
-    const userObj = emailLookUp(credentials.email, users);
-    // const user_id = request.cookies.user_id;
+  const email = request.body.email;
+  const password = request.body.password;
+  const userId = request.session.userCookie;
+  const hash = users[userId].password;
+  console.log("hash: ", hash);
 
-// made a change march 20
-    if (credentials.password === userObj.password) {
-      return response.cookie("user_id", userObj.id).redirect("/urls");
-    } else {
-      return response.statusCode(403);
-    }
+  if (!emailLookUp(email)) {
+    response.send("No user with that email found");
+    return;
+  } else {
+    bcrypt.compare(password, hash, function(err, res) {
+      if(res){
+        response.redirect("/urls");
+      } else {
+        response.send("error: passwords dont match");
+        return;
+      }
+     });
   }
-
-  return response.statusCode(403);
 });
 
 // user login page
 app.get("/login", (request, response) => {
-  const templateVars = { user: users[request.cookies.user_id] };
+  const userId = request.session.userCookie;
+  const templateVars = { user: users[userId] };
   response.render("urls_login", templateVars);
 });
 
-//
-// username is the username stored in a cookie
-//
-
 // logout user
 app.post("/logout", (request, response) => {
-  response.clearCookie("user_id");
+  request.session = null;
   response.redirect("/login");
 });
 
@@ -139,62 +132,42 @@ app.get("/logout", (request, response) => {
 
 // request to generate shortURL for longURL
 app.post("/urls", (request, response) => {
-  const user = request.cookies.user_id;
   const longURL = request.body.longURL;
   const shortURL = generateRandomString();
  
   urlDatabase[shortURL] = {};
-  
   urlDatabase[shortURL].longURL = longURL;
-  urlDatabase[shortURL].userId = user;
-  // console.log('urlDatabase: ', urlDatabase);
-
-  // console.log('urlData: ', request.body.shortURL);
-  // const templateVars = { urls: urlDatabase };
-  // response.render("/urls_index", templateVars);
+  urlDatabase[shortURL].userId = request.session.userCookie
 
   response.redirect("/urls");
 });
 
 // lists urls from database
 app.get("/urls", (request, response) => {
-  const user = users[request.cookies.user_id];
-  console.log("user: ", user);
-  const user_id = request.cookies.user_id
-  console.log("user_id: ", user_id);
-
-  // console.log("urlData: ", urlDatabase);
-  // if urlDatabase[shortURL].userId === user_id
-  // return shortURL and urlDatabase[shortURL].longURL
-
-   
-  console.log("users: ", users);
-  console.log("urlDatabase : ", urlDatabase);
-
-
-
-  usersUrlDatabase = urlsForUser(user_id);
-  // console.log("!!! ", usersUrlDatabase);
-  const templateVars = { user: user, urls: usersUrlDatabase, user_id: user_id};
+  const user = users[request.session.userCookie];
+  const userId = request.session.userCookie
+  // confused here
+  usersUrlDatabase = urlsForUser(userId);
+  const templateVars = { user: user, urls: usersUrlDatabase, userId: userId};
   response.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (request, response) => {
-  const user = users[request.cookies.user_id];
-  if (!user) {
+  const userCookie = users[request.session.userCookie];
+  if (!userCookie) {
     response.redirect("/register");
   } else {
-    const templateVars = { user: users[request.cookies.user_id]};
+    const templateVars = { user: users[userCookie]};
     response.render("urls_new", templateVars);
   }
 });
 
 // request to delete entry
 app.post("/urls/:shortURL/delete", (request, response) => {
-  const user_id = request.cookies.user_id;
+  const userCookie = request.session.userCookie;
   const shortURL = request.params.shortURL;
 
-  if (urlDatabase[shortURL].userId === user_id) {
+  if (urlDatabase[shortURL].userId === userCookie) {
     delete urlDatabase[shortURL];
     delete shortURL;
     response.redirect("/urls");
@@ -206,36 +179,32 @@ app.post("/urls/:shortURL/delete", (request, response) => {
 
 // update longURL value in database
 app.post("/urls/:shortURL", (request, response) => {
-  const user = users[request.cookies.user_id];
   const shortURL = request.params.shortURL;
-  urlDatabase[user.id] = request.body.longURL;
+  urlDatabase[shortURL].longURL = request.body.longURL;
   response.redirect("/urls");
 });
 
 // edit longURL
 app.get("/urls/:shortURL", (request, response) => {
   const shortURL = request.params.shortURL;
-  const templateVars = { user: users[request.cookies.user_id], shortURL: request.params.shortURL, longURL: urlDatabase[shortURL] };
-  // check if userId matches cookie. use urlsForUser function.
+  const longURL = request.params.longURL;
+  const userCookie = request.session.userCookie;
+
+  const templateVars = { user: users[userCookie], shortURL: shortURL, longURL: longURL };
   response.render("urls_show", templateVars);
 });
-
 
 // home page
 app.get("/", (request, response) => {
   response.send("Hello");
 });
 
-// create a new shortURL
-
 // use shortURL as parameter to be redirected to longURL's page
 app.get("/u/:shortURL", (request, response) => {
   const shortURL = request.params.shortURL;
-  const newURL = urlDatabase[shortURL].longURL;
-  response.redirect(newURL);
+  const longURL = urlDatabase[shortURL].longURL;
+  response.redirect(longURL);
 });
-
-
 
 // 404-page not found
 app.get("*", (request, response) => {
