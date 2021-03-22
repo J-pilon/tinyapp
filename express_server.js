@@ -25,15 +25,12 @@ app.use(cookieSession({
 
 // user registers and userId stored in cookie
 app.post("/register", (request, response) => {
-  const email = request.body.email;
-  const password = request.body.password;
+  const { email, password } = request.body;
   
   if (emailLookUp(email, users) || email.length === 0 || password.length === 0) {
     response.send('Error with registration! If already registered, please login');
   } else {
     const userId = generateRandomString();
-    console.log("userid in register: ", userId)
-    // request.session.userCookie = userId;
     bcrypt.genSalt(10, function(err, salt) {
       bcrypt.hash(password, salt, function(err, hash) {      
         users[userId] = { id: userId, email: email, password: hash };
@@ -51,8 +48,7 @@ app.get("/register", (request, response) => {
 
 // logining in a user
 app.post("/login", (request, response) => {
-  const email = request.body.email;
-  const password = request.body.password;
+  const { email, password } = request.body;
   const user = emailLookUp(email, users);
   const hash = user.password;
   request.session.userCookie = user.id;
@@ -74,7 +70,7 @@ app.post("/login", (request, response) => {
 
 // user login page
 app.get("/login", (request, response) => {
-  const email = request.body.email;
+  const { email } = request.body;
   const userId = emailLookUp(email, users);
   const templateVars = { user: users[userId] };
   response.render("urls_login", templateVars);
@@ -92,7 +88,7 @@ app.get("/logout", (request, response) => {
 
 // request to generate shortURL for longURL
 app.post("/urls", (request, response) => {
-  const longURL = request.body.longURL;
+  const { longURL } = request.body;
   const shortURL = generateRandomString();
  
   urlDatabase[shortURL] = {};
@@ -104,12 +100,11 @@ app.post("/urls", (request, response) => {
 
 // lists urls from database
 app.get("/urls", (request, response) => {
-  const userCookie = request.session.userCookie
+  const { userCookie } = request.session;
   const user = users[userCookie];
 
   usersUrlDatabase = urlsForUser(userCookie, urlDatabase);
-  console.log("usersUrlDatabase: ", usersUrlDatabase);
-  const templateVars = { user: user, urls: usersUrlDatabase, userId: userCookie};
+  const templateVars = { user, urls: usersUrlDatabase, userId: userCookie};
   response.render("urls_index", templateVars);
 });
 
@@ -125,8 +120,8 @@ app.get("/urls/new", (request, response) => {
 
 // request to delete entry
 app.post("/urls/:shortURL/delete", (request, response) => {
-  const userCookie = request.session.userCookie;
-  const shortURL = request.params.shortURL;
+  const { userCookie } = request.session;
+  const { shortURL } = request.params;
 
   if (urlDatabase[shortURL].userId === userCookie) {
     delete urlDatabase[shortURL];
@@ -140,8 +135,7 @@ app.post("/urls/:shortURL/delete", (request, response) => {
 
 // update longURL value in database
 app.post("/urls/:shortURL", (request, response) => {
-  console.log("!!!!");
-  const shortURL = request.params.shortURL;
+  const { shortURL } = request.params;
   urlDatabase[shortURL].longURL = request.body.longURL;
   response.redirect("/urls");
 });
@@ -162,7 +156,7 @@ app.get("/", (request, response) => {
 
 // use shortURL as parameter to be redirected to longURL's page
 app.get("/u/:shortURL", (request, response) => {
-  const shortURL = request.params.shortURL;
+  const { shortURL } = request.params;
   const longURL = urlDatabase[shortURL].longURL;
   response.redirect(longURL);
 });

@@ -2,7 +2,6 @@ const emailLookUp = function(emailInput, database) {
   for (const user in database) {
     if (database[user].email === emailInput) {
       return database[user];
-      // users[user] = { id, email, password }
     }
   }
   return false;
