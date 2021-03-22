@@ -49,11 +49,14 @@ app.get("/register", (request, response) => {
 // logining in a user
 app.post("/login", (request, response) => {
   const { email, password } = request.body;
-  const user = emailLookUp(email, users);
-  const hash = user.password;
-  request.session.userCookie = user.id;
+  // const user = emailLookUp(email, users);
+  const id = emailLookUp(email, users);
+  // const hash = user.password;
+  const hash = users[id].password;
+  // request.session.userCookie = user.id;
+  request.session.userCookie = id;
 
-  if (!user) {
+  if (!id) {
     response.send("No user with that email found");
     return;
   } else {
@@ -71,8 +74,11 @@ app.post("/login", (request, response) => {
 // user login page
 app.get("/login", (request, response) => {
   const { email } = request.body;
-  const userId = emailLookUp(email, users);
-  const templateVars = { user: users[userId] };
+  // const userId = emailLookUp(email, users);
+  const id = emailLookUp(email, users);
+
+  // const templateVars = { user: users[userId] };
+  const templateVars = { user: users[id] };
   response.render("urls_login", templateVars);
 });
 
@@ -157,7 +163,12 @@ app.get("/", (request, response) => {
 // use shortURL as parameter to be redirected to longURL's page
 app.get("/u/:shortURL", (request, response) => {
   const { shortURL } = request.params;
+  // const shortURL = request.params.shortURL;
+  console.log("short ", shortURL);
+
+  console.log("urlDatabase ", urlDatabase);
   const longURL = urlDatabase[shortURL].longURL;
+
   response.redirect(longURL);
 });
 

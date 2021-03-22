@@ -1,10 +1,10 @@
 const emailLookUp = function(emailInput, database) {
   for (const user in database) {
     if (database[user].email === emailInput) {
-      return database[user];
+       return database[user].id;
     }
   }
-  return false;
+  return undefined;
 };
 
 const generateRandomString = function() {
@@ -23,6 +23,5 @@ const urlsForUser = function(id, database) {
   }
   return usersUrlDatabase;
 };
-
 
 module.exports = { emailLookUp, generateRandomString, urlsForUser };
