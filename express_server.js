@@ -32,13 +32,13 @@ app.post("/register", (request, response) => {
   } else {
     const userId = generateRandomString();
     bcrypt.genSalt(10, function(err, salt) {
-      bcrypt.hash(password, salt, function(err, hash) {      
+      bcrypt.hash(password, salt, function(err, hash) {
         users[userId] = { id: userId, email: email, password: hash };
       });
       response.redirect("/login");
     });
   }
-})
+});
   
 // registration page
 app.get("/register", (request, response) => {
@@ -49,23 +49,22 @@ app.get("/register", (request, response) => {
 // logining in a user
 app.post("/login", (request, response) => {
   const { email, password } = request.body;
- 
   const id = emailLookUp(email, users);
-  const hash = users[id].password;
-  request.session.userCookie = id;
 
   if (!id) {
     response.send("No user with that email found");
     return;
   } else {
+    const hash = users[id].password;
+    request.session.userCookie = id;
     bcrypt.compare(password, hash, function(err, res) {
-      if(res){
+      if (res) {
         response.redirect("/urls");
       } else {
         response.send("error: passwords dont match");
         return;
       }
-     });
+    });
   }
 });
 
@@ -95,8 +94,7 @@ app.post("/urls", (request, response) => {
  
   urlDatabase[shortURL] = {};
   urlDatabase[shortURL].longURL = longURL;
-  urlDatabase[shortURL].userId = request.session.userCookie
-
+  urlDatabase[shortURL].userId = request.session.userCookie;
   response.redirect("/urls");
 });
 
@@ -105,12 +103,10 @@ app.get("/urls", (request, response) => {
   const { userCookie } = request.session;
   const user = users[userCookie];
   if (!userCookie) {
-    response.send('Please login to see urls');
+    response.redirect("/login");
     return;
   }
-  // usersUrlDatabase = urlsForUser(userCookie, urlDatabase);
   const templateVars = { user, urls: urlDatabase, userId: userCookie};
-  // const templateVars = { user, urls: usersUrlDatabase, userId: userCookie};
   response.render("urls_index", templateVars);
 });
 
@@ -136,7 +132,6 @@ app.post("/urls/:shortURL/delete", (request, response) => {
   } else {
     response.send("Cant delete that");
   }
-  
 });
 
 // update longURL value in database
@@ -163,11 +158,7 @@ app.get("/", (request, response) => {
 // use shortURL as parameter to be redirected to longURL's page
 app.get("/u/:shortURL", (request, response) => {
   const { shortURL } = request.params;
-  console.log("short ", shortURL);
-
-  console.log("urlDatabase ", urlDatabase);
   const longURL = urlDatabase[shortURL].longURL;
-
   response.redirect(longURL);
 });
 
