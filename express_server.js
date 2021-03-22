@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const morgan = require('morgan');
 const cookieSession = require('cookie-session');
 
-const { emailLookUp, generateRandomString, urlsForUser } = require('./helpers');
+const { emailLookUp, generateRandomString } = require('./helpers');
 
 const app = express();
 const PORT = 8080;
@@ -49,11 +49,9 @@ app.get("/register", (request, response) => {
 // logining in a user
 app.post("/login", (request, response) => {
   const { email, password } = request.body;
-  // const user = emailLookUp(email, users);
+ 
   const id = emailLookUp(email, users);
-  // const hash = user.password;
   const hash = users[id].password;
-  // request.session.userCookie = user.id;
   request.session.userCookie = id;
 
   if (!id) {
@@ -74,10 +72,8 @@ app.post("/login", (request, response) => {
 // user login page
 app.get("/login", (request, response) => {
   const { email } = request.body;
-  // const userId = emailLookUp(email, users);
   const id = emailLookUp(email, users);
 
-  // const templateVars = { user: users[userId] };
   const templateVars = { user: users[id] };
   response.render("urls_login", templateVars);
 });
@@ -108,9 +104,13 @@ app.post("/urls", (request, response) => {
 app.get("/urls", (request, response) => {
   const { userCookie } = request.session;
   const user = users[userCookie];
-
-  usersUrlDatabase = urlsForUser(userCookie, urlDatabase);
-  const templateVars = { user, urls: usersUrlDatabase, userId: userCookie};
+  if (!userCookie) {
+    response.send('Please login to see urls');
+    return;
+  }
+  // usersUrlDatabase = urlsForUser(userCookie, urlDatabase);
+  const templateVars = { user, urls: urlDatabase, userId: userCookie};
+  // const templateVars = { user, urls: usersUrlDatabase, userId: userCookie};
   response.render("urls_index", templateVars);
 });
 
@@ -163,7 +163,6 @@ app.get("/", (request, response) => {
 // use shortURL as parameter to be redirected to longURL's page
 app.get("/u/:shortURL", (request, response) => {
   const { shortURL } = request.params;
-  // const shortURL = request.params.shortURL;
   console.log("short ", shortURL);
 
   console.log("urlDatabase ", urlDatabase);

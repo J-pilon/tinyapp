@@ -12,16 +12,16 @@ const generateRandomString = function() {
   return num;
 };
 
-const urlsForUser = function(id, database) {
-  usersUrlDatabase = {};
+// const urlsForUser = function(id, database) {
+//   usersUrlDatabase = {};
 
-  for (let url in database) {
-    if(database[url].userId === id) {
-      let temp = { shortURL: url, longURL: database[url].longURL };   
-      usersUrlDatabase[url] = temp;
-    }
-  }
-  return usersUrlDatabase;
-};
+//   for (let url in database) {
+//     if(database[url].userId === id) {
+//       let temp = { shortURL: url, longURL: database[url].longURL };   
+//       usersUrlDatabase[url] = temp;
+//     }
+//   }
+//   return usersUrlDatabase;
+// };
 
-module.exports = { emailLookUp, generateRandomString, urlsForUser };
+module.exports = { emailLookUp, generateRandomString };
