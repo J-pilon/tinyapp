@@ -23,7 +23,7 @@ app.use(cookieSession({
   keys: ["key1"],
 }));
 
-// user registers and userId stored in cookie
+
 app.post("/register", (request, response) => {
   const { email, password } = request.body;
   
@@ -40,13 +40,13 @@ app.post("/register", (request, response) => {
   }
 });
   
-// registration page
+
 app.get("/register", (request, response) => {
   const templateVars = { user: users[request.session.userCookie] };
   response.render("urls_register", templateVars);
 });
 
-// logining in a user
+
 app.post("/login", (request, response) => {
   const { email, password } = request.body;
   const id = emailLookUp(email, users);
@@ -68,7 +68,7 @@ app.post("/login", (request, response) => {
   }
 });
 
-// user login page
+
 app.get("/login", (request, response) => {
   const { email } = request.body;
   const id = emailLookUp(email, users);
@@ -77,7 +77,7 @@ app.get("/login", (request, response) => {
   response.render("urls_login", templateVars);
 });
 
-// logout user
+
 app.post("/logout", (request, response) => {
   request.session = null;
   response.redirect("/login");
@@ -87,7 +87,8 @@ app.get("/logout", (request, response) => {
   response.render("urls_show");
 });
 
-// request to generate shortURL for longURL
+// request to generate shortURL
+// saves shortURL and longURL in database
 app.post("/urls", (request, response) => {
   const { longURL } = request.body;
   const shortURL = generateRandomString();
@@ -120,7 +121,6 @@ app.get("/urls/new", (request, response) => {
   }
 });
 
-// request to delete entry
 app.post("/urls/:shortURL/delete", (request, response) => {
   const { userCookie } = request.session;
   const { shortURL } = request.params;
@@ -150,7 +150,6 @@ app.get("/urls/:shortURL", (request, response) => {
   response.render("urls_show", templateVars);
 });
 
-// home page
 app.get("/", (request, response) => {
   response.send("Hello");
 });
@@ -162,12 +161,10 @@ app.get("/u/:shortURL", (request, response) => {
   response.redirect(longURL);
 });
 
-// 404-page not found
 app.get("*", (request, response) => {
   response.sendStatus(404);
 });
 
-// server is listening
 app.listen(PORT, () => {
   console.log(`Server is listening on port: ${PORT}`);
 });
