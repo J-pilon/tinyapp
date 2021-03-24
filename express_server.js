@@ -105,12 +105,19 @@ app.post("/urls", (request, response) => {
 app.get("/urls", (request, response) => {
   const { userCookie } = request.session;
 
+
   const user = users[userCookie];
   if (!userCookie) {
     response.redirect("/login");
     return;
   }
-  const templateVars = { user, urls: urlDatabase, userId: userCookie};
+  const userUrlDatabase = {};
+  for (const short in urlDatabase) {
+    if (urlDatabase[short].userId === userCookie) {
+      userUrlDatabase[short] = { longURL: urlDatabase[short].longURL, userId: userCookie };
+    }
+  }
+  const templateVars = { user, urls: userUrlDatabase, userId: userCookie};
   response.render("urls_index", templateVars);
 });
 
@@ -146,7 +153,8 @@ app.post("/urls/:shortURL", (request, response) => {
 
 // edit longURL
 app.get("/urls/:shortURL", (request, response) => {
-  const { shortURL, longURL } = request.params;
+  const { shortURL } = request.params;
+  const longURL = urlDatabase[shortURL].longURL;
   const userCookie = request.session.userCookie;
 
   const templateVars = { user: users[userCookie], shortURL, longURL };
