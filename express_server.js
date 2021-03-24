@@ -151,7 +151,13 @@ app.get("/urls/:shortURL", (request, response) => {
 });
 
 app.get("/", (request, response) => {
-  response.send("Hello");
+  const userCookie = request.session.userCookie;
+  
+  if (userCookie) {
+    response.redirect("/urls");
+  } else {
+    response.redirect("/login");
+  }
 });
 
 // use shortURL as parameter to be redirected to longURL's page
