@@ -26,16 +26,19 @@ app.use(cookieSession({
 
 app.post("/register", (request, response) => {
   const { email, password } = request.body;
-  
-  if (emailLookUp(email, users) || email.length === 0 || password.length === 0) {
-    response.send('Error with registration! If already registered, please login');
+
+  if (email.length === 0 || password.length === 0) {
+    response.send("Email or password incorrect!");
+  } else if (emailLookUp(email, users)) {
+    response.redirect("/urls");
   } else {
     const userId = generateRandomString();
+    request.session.userCookie = userId;
     bcrypt.genSalt(10, function(err, salt) {
       bcrypt.hash(password, salt, function(err, hash) {
         users[userId] = { id: userId, email: email, password: hash };
+        response.redirect("/urls");
       });
-      response.redirect("/login");
     });
   }
 });
@@ -77,7 +80,6 @@ app.get("/login", (request, response) => {
   response.render("urls_login", templateVars);
 });
 
-
 app.post("/logout", (request, response) => {
   request.session = null;
   response.redirect("/login");
@@ -102,6 +104,7 @@ app.post("/urls", (request, response) => {
 // lists urls from database
 app.get("/urls", (request, response) => {
   const { userCookie } = request.session;
+
   const user = users[userCookie];
   if (!userCookie) {
     response.redirect("/login");
