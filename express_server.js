@@ -153,12 +153,17 @@ app.post("/urls/:shortURL", (request, response) => {
 
 // edit longURL
 app.get("/urls/:shortURL", (request, response) => {
-  const { shortURL } = request.params;
-  const longURL = urlDatabase[shortURL].longURL;
   const userCookie = request.session.userCookie;
 
-  const templateVars = { user: users[userCookie], shortURL, longURL };
-  response.render("urls_show", templateVars);
+  if (userCookie) {
+    const { shortURL } = request.params;
+    const longURL = urlDatabase[shortURL].longURL;
+  
+    const templateVars = { user: users[userCookie], shortURL, longURL };
+    response.render("urls_show", templateVars);
+  } else {
+    response.redirect("/login");
+  }
 });
 
 app.get("/", (request, response) => {
